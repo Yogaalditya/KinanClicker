@@ -15,29 +15,35 @@ python main.py
 
 ## Langkah 3: Gunakan
 
-1. **Input Interval**: Ubah nilai 100 (default) sesuai kebutuhan
+1. **Input Interval**: Masukkan nilai interval klik (ms), default 100. Hanya angka positif yang valid.
    - 100 ms = 10 klik per detik
    - 500 ms = 2 klik per detik
    - 1000 ms = 1 klik per detik
-
-2. **Pilih Jenis Klik**: Left atau Right dari dropdown
-
-3. **Start**:
-   - Klik tombol "START" atau tekan **F6**
+   - Jika input tidak valid, akan muncul error.
+2. **Pilih Jenis Klik**: Pilih "left" atau "right" dari dropdown.
+3. **Pengaturan Hotkey**: Klik tombol "🔧 HOTKEY SETTINGS" untuk mengubah hotkey Start/Stop sesuai keinginan.
+   - Default: F6 (Start), F7 (Stop)
+   - Info hotkey tampil di bawah tombol
+4. **Start**:
+   - Klik tombol "START" atau tekan hotkey Start
    - Status akan berubah menjadi 🟢 RUNNING
-
-4. **Stop**:
-   - Klik tombol "STOP" atau tekan **F7**
+   - Tombol Start nonaktif saat running
+5. **Stop**:
+   - Klik tombol "STOP" atau tekan hotkey Stop
    - Status akan berubah menjadi 🔴 STOPPED
+   - Tombol Stop nonaktif saat stopped
+6. **Status & Info**:
+   - Status real-time di label bawah tombol
+   - Info hotkey dan mode background tampil di UI
 
 ## 📌 Contoh Interval
 
-| Use Case | Interval |
-|----------|----------|
-| Super cepat | 50 ms |
-| Cepat | 100-200 ms |
-| Normal | 500 ms |
-| Lambat | 1000+ ms |
+| Use Case     | Interval |
+|-------------|----------|
+| Super cepat | 50 ms    |
+| Cepat       | 100-200 ms |
+| Normal      | 500 ms   |
+| Lambat      | 1000+ ms |
 
 ## ⚙️ Pengaturan Lanjut
 

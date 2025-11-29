@@ -5,12 +5,13 @@ Auto Clicker sederhana dengan GUI yang memungkinkan Anda mengotomatisasi klik mo
 ## 🎯 Fitur
 
 - ✅ **UI Sederhana**: Interface yang rapi dan mudah dipahami
-- ✅ **Input Interval**: Atur interval klik dalam milisecond (ms)
+- ✅ **Input Interval**: Atur interval klik dalam milisecond (ms), validasi input hanya angka positif
 - ✅ **Jenis Klik**: Pilih antara klik kiri atau kanan
-- ✅ **Global Hotkey**: F6 untuk Start, F7 untuk Stop
+- ✅ **Global Hotkey**: Hotkey Start/Stop bisa diubah lewat menu "HOTKEY SETTINGS" (default: F6/F7)
+- ✅ **Info Hotkey di UI**: Info hotkey tampil di bawah tombol
 - ✅ **Background Execution**: Tetap berjalan meski jendela tidak aktif
-- ✅ **Validasi Input**: Memastikan input yang valid
-- ✅ **Status Real-time**: Menampilkan status Running/Stopped
+- ✅ **Status Real-time**: Menampilkan status Running/Stopped secara real-time
+- ✅ **Button Toggle**: Tombol Start/Stop otomatis aktif/nonaktif sesuai status
 - ✅ **Multi-Platform**: Bekerja di Windows, Linux, dan macOS
 
 ## 📁 Struktur Folder Project
@@ -52,8 +53,7 @@ KinanClicker/
 ## 📦 Requirements
 
 - Python 3.6+
-- mouse (untuk kontrol mouse)
-- keyboard (untuk global hotkey)
+- pynput (untuk kontrol mouse & hotkey)
 - tkinter (built-in dengan Python)
 
 ## 🚀 Cara Menjalankan
@@ -64,11 +64,6 @@ KinanClicker/
 pip install -r requirements.txt
 ```
 
-Atau manual install:
-```bash
-pip install mouse keyboard
-```
-
 ### 2. Jalankan Program
 
 ```bash
@@ -77,12 +72,14 @@ python main.py
 
 ### 3. Menggunakan Program
 
-1. **Set Interval (ms)**: Masukkan interval dalam ms (default: 100 ms)
-2. **Pilih Jenis Klik**: Dropdown untuk memilih Left atau Right
-3. **Start/Stop**:
-   - Click tombol "▶ START" atau tekan **F6** untuk memulai
-   - Click tombol "⏹ STOP" atau tekan **F7** untuk berhenti
-4. **Monitor Status**: Lihat label status berubah menjadi 🟢 RUNNING atau 🔴 STOPPED
+1. **Set Interval (ms)**: Masukkan interval dalam ms (default: 100 ms). Hanya angka positif yang valid, jika salah akan muncul error.
+2. **Pilih Jenis Klik**: Dropdown untuk memilih "left" atau "right".
+3. **Pengaturan Hotkey**: Klik tombol "🔧 HOTKEY SETTINGS" untuk mengubah hotkey Start/Stop sesuai keinginan (default: F6/F7). Info hotkey tampil di bawah tombol.
+4. **Start/Stop**:
+   - Klik tombol "▶ START" atau tekan hotkey Start untuk memulai
+   - Klik tombol "⏹ STOP" atau tekan hotkey Stop untuk berhenti
+   - Tombol Start/Stop otomatis aktif/nonaktif sesuai status
+5. **Monitor Status**: Lihat label status berubah menjadi 🟢 RUNNING atau 🔴 STOPPED secara real-time
 
 ## ⚠️ Catatan Penting
 
