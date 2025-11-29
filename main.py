@@ -10,13 +10,13 @@ class AutoClickerUI:
         self.root.title("KinanClicker - Auto Clicker")
         self.root.geometry("400x380")
         self.root.resizable(False, False)
-        
+
         self.auto_clicker = AutoClicker()
         self.listener = None
         self.update_after_id = None
         self.hotkey_start = keyboard.Key.f6
         self.hotkey_stop = keyboard.Key.f7
-        
+
         self.setup_ui()
         self.setup_hotkeys()
         self.update_status()
@@ -82,7 +82,7 @@ class AutoClickerUI:
         self.info_text = ttk.Label(info_frame, font=("Arial", 8), foreground="gray")
         self.info_text.pack()
         self.update_info_text()
-        
+
         hotkey_button_frame = ttk.Frame(main_frame)
         hotkey_button_frame.pack(fill=tk.X, pady=5)
         self.hotkey_settings_button = ttk.Button(
@@ -131,17 +131,17 @@ class AutoClickerUI:
         settings_window.geometry("350x250")
         settings_window.resizable(False, False)
         settings_window.grab_set()
-        
+
         main_frame = ttk.Frame(settings_window, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="Atur Hotkey", font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         start_frame = ttk.Frame(main_frame)
         start_frame.pack(fill=tk.X, pady=10)
         ttk.Label(start_frame, text="Hotkey Start:", width=15).pack(side=tk.LEFT)
         self.start_key_label = ttk.Label(
-            start_frame, 
+            start_frame,
             text=self.get_key_name(self.hotkey_start),
             font=("Arial", 10, "bold"),
             foreground="blue",
@@ -149,7 +149,7 @@ class AutoClickerUI:
         )
         self.start_key_label.pack(side=tk.LEFT, padx=5)
         ttk.Button(start_frame, text="Ganti", command=lambda: self.capture_hotkey("start", self.start_key_label)).pack(side=tk.LEFT, padx=5)
-        
+
         stop_frame = ttk.Frame(main_frame)
         stop_frame.pack(fill=tk.X, pady=10)
         ttk.Label(stop_frame, text="Hotkey Stop:", width=15).pack(side=tk.LEFT)
@@ -162,11 +162,11 @@ class AutoClickerUI:
         )
         self.stop_key_label.pack(side=tk.LEFT, padx=5)
         ttk.Button(stop_frame, text="Ganti", command=lambda: self.capture_hotkey("stop", self.stop_key_label)).pack(side=tk.LEFT, padx=5)
-        
+
         info_frame = ttk.Frame(main_frame)
         info_frame.pack(fill=tk.X, pady=15)
         ttk.Label(info_frame, text="Klik tombol 'Ganti' lalu tekan tombol yang diinginkan", font=("Arial", 9), foreground="gray", wraplength=300, justify=tk.LEFT).pack()
-        
+
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
         ttk.Button(button_frame, text="Tutup", command=settings_window.destroy).pack(fill=tk.X)
@@ -177,52 +177,52 @@ class AutoClickerUI:
         capture_window.geometry("300x150")
         capture_window.resizable(False, False)
         capture_window.grab_set()
-        
+
         main_frame = ttk.Frame(capture_window, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="Tekan tombol yang diinginkan...", font=("Arial", 11, "bold")).pack(pady=20)
-        
+
         status_label = ttk.Label(main_frame, text="Menunggu input...", font=("Arial", 10), foreground="orange")
         status_label.pack(pady=10)
-        
+
         captured_key = [None]
-        
+
         def on_press(key):
             try:
                 captured_key[0] = key
                 status_label.config(text=f"Tombol: {self.get_key_name(key)}", foreground="green")
                 self.root.after(500, lambda: capture_window.destroy())
-                
+
                 if hotkey_type == "start":
                     self.hotkey_start = key
                     label_widget.config(text=self.get_key_name(key))
                 else:
                     self.hotkey_stop = key
                     label_widget.config(text=self.get_key_name(key))
-                
+
                 self.setup_hotkeys()
                 self.update_info_text()
-                
+
                 return False
             except Exception as e:
                 status_label.config(text=f"Error: {str(e)}", foreground="red")
-        
+
         listener = keyboard.Listener(on_press=on_press)
         listener.start()
-        
+
         def on_window_close():
             try:
                 listener.stop()
             except:
                 pass
             capture_window.destroy()
-        
+
         capture_window.protocol("WM_DELETE_WINDOW", on_window_close)
 
     def on_start_click(self):
         interval_text = self.interval_input.get()
-        
+
         success, message = self.auto_clicker.set_interval(interval_text)
         if not success:
             messagebox.showerror("Error", message)
@@ -256,22 +256,22 @@ class AutoClickerUI:
             self.status_label.config(text="🟢 RUNNING", foreground="green")
         else:
             self.status_label.config(text="🔴 STOPPED", foreground="red")
-        
+
         self.update_after_id = self.root.after(500, self.update_status)
 
     def on_closing(self):
         if self.update_after_id:
             self.root.after_cancel(self.update_after_id)
-        
+
         try:
             if self.listener:
                 self.listener.stop()
         except:
             pass
-        
+
         if self.auto_clicker.is_running():
             self.auto_clicker.stop()
-        
+
         self.root.destroy()
 
 
