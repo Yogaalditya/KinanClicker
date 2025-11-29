@@ -13,6 +13,7 @@ class AutoClickerUI:
         
         self.auto_clicker = AutoClicker()
         self.listener = None
+        self.update_after_id = None
         
         self.setup_ui()
         self.setup_hotkeys()
@@ -129,9 +130,12 @@ class AutoClickerUI:
         else:
             self.status_label.config(text="🔴 STOPPED", foreground="red")
         
-        self.root.after(500, self.update_status)
+        self.update_after_id = self.root.after(500, self.update_status)
 
     def on_closing(self):
+        if self.update_after_id:
+            self.root.after_cancel(self.update_after_id)
+        
         try:
             if self.listener:
                 self.listener.stop()
