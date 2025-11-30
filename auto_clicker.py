@@ -45,6 +45,11 @@ class AutoClicker:
             self.click_thread.join(timeout=1)
         return True, "Auto clicker dihentikan"
 
+    def force_stop(self):
+        """Force stop the auto clicker even if thread is stuck"""
+        self.running = False
+        return True, "Auto clicker dipaksa berhenti"
+
     def is_running(self):
         return self.running
 

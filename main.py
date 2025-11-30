@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from pynput import keyboard
+import threading
 from auto_clicker import AutoClicker
 
 
@@ -116,14 +117,30 @@ class AutoClickerUI:
         def on_press(key):
             try:
                 if key == self.hotkey_start:
-                    self.on_start_click()
+                    self.root.after_idle(self.on_start_click)
                 elif key == self.hotkey_stop:
-                    self.on_stop_click()
+                    self.root.after_idle(self.on_stop_click)
             except AttributeError:
                 pass
+            except Exception as e:
+                print(f"Hotkey error: {e}")
 
-        self.listener = keyboard.Listener(on_press=on_press)
-        self.listener.start()
+        def on_release(key):
+            pass
+
+        try:
+            self.listener = keyboard.Listener(
+                on_press=on_press, 
+                on_release=on_release,
+                suppress=False
+            )
+            self.listener.start()
+            
+            # Start hotkey monitoring thread
+            self.start_hotkey_monitor()
+        except Exception as e:
+            print(f"Failed to start hotkey listener: {e}")
+            self.show_fallback_message()
 
     def open_hotkey_settings(self):
         settings_window = tk.Toplevel(self.root)
@@ -219,6 +236,32 @@ class AutoClickerUI:
             capture_window.destroy()
 
         capture_window.protocol("WM_DELETE_WINDOW", on_window_close)
+
+    def start_hotkey_monitor(self):
+        """Monitor hotkey listener and restart if it fails"""
+        def monitor_loop():
+            import time
+            while hasattr(self, 'root') and self.root.winfo_exists():
+                try:
+                    if self.listener and not self.listener.running:
+                        print("Hotkey listener died, restarting...")
+                        self.setup_hotkeys()
+                        break
+                    time.sleep(2)
+                except Exception as e:
+                    print(f"Monitor error: {e}")
+                    break
+        
+        monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
+        monitor_thread.start()
+
+    def show_fallback_message(self):
+        """Show message when hotkeys fail"""
+        messagebox.showwarning(
+            "Hotkey Warning", 
+            "Hotkey mungkin tidak berfungsi dengan beberapa aplikasi/game.\n"
+            "Gunakan tombol START/STOP di interface jika hotkey tidak responsif."
+        )
 
     def on_start_click(self):
         interval_text = self.interval_input.get()
