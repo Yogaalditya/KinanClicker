@@ -89,7 +89,7 @@ class AutoClickerUI:
         self.hotkey_settings_button = ttk.Button(
             hotkey_button_frame,
             text="🔧 HOTKEY SETTINGS",
-            command=self.open_hotkey_settings
+            command=self.open_mode_selection
         )
         self.hotkey_settings_button.pack(fill=tk.X)
 
@@ -116,17 +116,28 @@ class AutoClickerUI:
 
         def on_press(key):
             try:
-                if key == self.hotkey_start:
-                    self.root.after_idle(self.on_start_click)
-                elif key == self.hotkey_stop:
-                    self.root.after_idle(self.on_stop_click)
+                if self.auto_clicker.get_mode() == "toggle":
+                    if key == self.hotkey_start:
+                        self.root.after_idle(self.on_start_click)
+                    elif key == self.hotkey_stop:
+                        self.root.after_idle(self.on_stop_click)
+                elif self.auto_clicker.get_mode() == "hold":
+                    if key == self.hotkey_start:
+                        self.root.after_idle(self.on_hold_start)
             except AttributeError:
                 pass
             except Exception as e:
                 print(f"Hotkey error: {e}")
 
         def on_release(key):
-            pass
+            try:
+                if self.auto_clicker.get_mode() == "hold":
+                    if key == self.hotkey_start:
+                        self.root.after_idle(self.on_hold_stop)
+            except AttributeError:
+                pass
+            except Exception as e:
+                print(f"Hotkey release error: {e}")
 
         try:
             self.listener = keyboard.Listener(
@@ -142,43 +153,105 @@ class AutoClickerUI:
             print(f"Failed to start hotkey listener: {e}")
             self.show_fallback_message()
 
+    def open_mode_selection(self):
+        """Open mode selection dialog before hotkey settings"""
+        mode_window = tk.Toplevel(self.root)
+        mode_window.title("Pilih Mode Auto Clicker")
+        mode_window.geometry("350x200")
+        mode_window.resizable(False, False)
+        mode_window.grab_set()
+
+        main_frame = ttk.Frame(mode_window, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Pilih Mode Auto Clicker", font=("Arial", 12, "bold")).pack(pady=10)
+
+        # Toggle mode button
+        toggle_frame = ttk.Frame(main_frame)
+        toggle_frame.pack(fill=tk.X, pady=5)
+        ttk.Button(
+            toggle_frame,
+            text="🔄 TOGGLE MODE",
+            command=lambda: self.select_mode("toggle", mode_window),
+            width=25
+        ).pack(fill=tk.X)
+        ttk.Label(toggle_frame, text="Tekan sekali untuk start, tekan lagi untuk stop", font=("Arial", 8), foreground="gray").pack(pady=2)
+
+        # Hold mode button
+        hold_frame = ttk.Frame(main_frame)
+        hold_frame.pack(fill=tk.X, pady=5)
+        ttk.Button(
+            hold_frame,
+            text="⏰ HOLD MODE",
+            command=lambda: self.select_mode("hold", mode_window),
+            width=25
+        ).pack(fill=tk.X)
+        ttk.Label(hold_frame, text="Aktif selama tombol ditekan/hold", font=("Arial", 8), foreground="gray").pack(pady=2)
+
+        # Cancel button
+        ttk.Button(main_frame, text="Batal", command=mode_window.destroy).pack(pady=10)
+
+    def select_mode(self, mode, mode_window):
+        """Select mode and open hotkey settings"""
+        self.auto_clicker.set_mode(mode)
+        mode_window.destroy()
+        self.open_hotkey_settings()
+
     def open_hotkey_settings(self):
         settings_window = tk.Toplevel(self.root)
-        settings_window.title("Hotkey Settings")
-        settings_window.geometry("350x250")
+        current_mode = self.auto_clicker.get_mode()
+        mode_text = "Toggle" if current_mode == "toggle" else "Hold"
+        settings_window.title(f"Hotkey Settings - {mode_text} Mode")
+        settings_window.geometry("350x300")
         settings_window.resizable(False, False)
         settings_window.grab_set()
 
         main_frame = ttk.Frame(settings_window, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Atur Hotkey", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=f"Atur Hotkey - {mode_text} Mode", font=("Arial", 12, "bold")).pack(pady=10)
 
-        start_frame = ttk.Frame(main_frame)
-        start_frame.pack(fill=tk.X, pady=10)
-        ttk.Label(start_frame, text="Hotkey Start:", width=15).pack(side=tk.LEFT)
-        self.start_key_label = ttk.Label(
-            start_frame,
-            text=self.get_key_name(self.hotkey_start),
-            font=("Arial", 10, "bold"),
-            foreground="blue",
-            width=15
-        )
-        self.start_key_label.pack(side=tk.LEFT, padx=5)
-        ttk.Button(start_frame, text="Ganti", command=lambda: self.capture_hotkey("start", self.start_key_label)).pack(side=tk.LEFT, padx=5)
+        if current_mode == "toggle":
+            # Toggle mode - show both start and stop hotkeys
+            start_frame = ttk.Frame(main_frame)
+            start_frame.pack(fill=tk.X, pady=10)
+            ttk.Label(start_frame, text="Hotkey Start:", width=15).pack(side=tk.LEFT)
+            self.start_key_label = ttk.Label(
+                start_frame,
+                text=self.get_key_name(self.hotkey_start),
+                font=("Arial", 10, "bold"),
+                foreground="blue",
+                width=15
+            )
+            self.start_key_label.pack(side=tk.LEFT, padx=5)
+            ttk.Button(start_frame, text="Ganti", command=lambda: self.capture_hotkey("start", self.start_key_label)).pack(side=tk.LEFT, padx=5)
 
-        stop_frame = ttk.Frame(main_frame)
-        stop_frame.pack(fill=tk.X, pady=10)
-        ttk.Label(stop_frame, text="Hotkey Stop:", width=15).pack(side=tk.LEFT)
-        self.stop_key_label = ttk.Label(
-            stop_frame,
-            text=self.get_key_name(self.hotkey_stop),
-            font=("Arial", 10, "bold"),
-            foreground="blue",
-            width=15
-        )
-        self.stop_key_label.pack(side=tk.LEFT, padx=5)
-        ttk.Button(stop_frame, text="Ganti", command=lambda: self.capture_hotkey("stop", self.stop_key_label)).pack(side=tk.LEFT, padx=5)
+            stop_frame = ttk.Frame(main_frame)
+            stop_frame.pack(fill=tk.X, pady=10)
+            ttk.Label(stop_frame, text="Hotkey Stop:", width=15).pack(side=tk.LEFT)
+            self.stop_key_label = ttk.Label(
+                stop_frame,
+                text=self.get_key_name(self.hotkey_stop),
+                font=("Arial", 10, "bold"),
+                foreground="blue",
+                width=15
+            )
+            self.stop_key_label.pack(side=tk.LEFT, padx=5)
+            ttk.Button(stop_frame, text="Ganti", command=lambda: self.capture_hotkey("stop", self.stop_key_label)).pack(side=tk.LEFT, padx=5)
+        else:
+            # Hold mode - only show hold key
+            hold_frame = ttk.Frame(main_frame)
+            hold_frame.pack(fill=tk.X, pady=10)
+            ttk.Label(hold_frame, text="Hotkey Hold:", width=15).pack(side=tk.LEFT)
+            self.start_key_label = ttk.Label(
+                hold_frame,
+                text=self.get_key_name(self.hotkey_start),
+                font=("Arial", 10, "bold"),
+                foreground="blue",
+                width=15
+            )
+            self.start_key_label.pack(side=tk.LEFT, padx=5)
+            ttk.Button(hold_frame, text="Ganti", command=lambda: self.capture_hotkey("start", self.start_key_label)).pack(side=tk.LEFT, padx=5)
 
         info_frame = ttk.Frame(main_frame)
         info_frame.pack(fill=tk.X, pady=15)
@@ -290,15 +363,49 @@ class AutoClickerUI:
         else:
             messagebox.showwarning("Warning", message)
 
+    def on_hold_start(self):
+        """Handle hold mode start"""
+        if self.auto_clicker.get_mode() != "hold":
+            return
+        
+        interval_text = self.interval_input.get()
+        success, message = self.auto_clicker.set_interval(interval_text)
+        if not success:
+            messagebox.showerror("Error", message)
+            return
+
+        success, message = self.auto_clicker.start_hold()
+        if success:
+            self.start_button.config(state=tk.DISABLED)
+            self.stop_button.config(state=tk.DISABLED)
+            self.interval_input.config(state=tk.DISABLED)
+
+    def on_hold_stop(self):
+        """Handle hold mode stop"""
+        if self.auto_clicker.get_mode() != "hold":
+            return
+        
+        success, message = self.auto_clicker.stop_hold()
+        if success:
+            self.start_button.config(state=tk.NORMAL)
+            self.stop_button.config(state=tk.DISABLED)
+            self.interval_input.config(state=tk.NORMAL)
+
     def on_click_type_change(self, event=None):
         click_type = self.click_type_var.get()
         self.auto_clicker.set_click_type(click_type)
 
     def update_status(self):
-        if self.auto_clicker.is_running():
-            self.status_label.config(text="🟢 RUNNING", foreground="green")
+        if self.auto_clicker.get_mode() == "hold":
+            if self.auto_clicker.is_hold_active():
+                self.status_label.config(text="🟢 HOLD ACTIVE", foreground="green")
+            else:
+                self.status_label.config(text="🔴 HOLD READY", foreground="orange")
         else:
-            self.status_label.config(text="🔴 STOPPED", foreground="red")
+            if self.auto_clicker.is_running():
+                self.status_label.config(text="🟢 RUNNING", foreground="green")
+            else:
+                self.status_label.config(text="🔴 STOPPED", foreground="red")
 
         self.update_after_id = self.root.after(500, self.update_status)
 

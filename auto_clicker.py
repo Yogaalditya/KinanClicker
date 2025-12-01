@@ -11,6 +11,8 @@ class AutoClicker:
         self.interval_ms = 100
         self.click_type = "left"
         self.mouse_controller = Controller()
+        self.mode = "toggle"  # "toggle" or "hold"
+        self.hold_active = False
 
     def set_interval(self, interval_ms):
         try:
@@ -26,6 +28,15 @@ class AutoClicker:
             self.click_type = click_type
             return True
         return False
+
+    def set_mode(self, mode):
+        if mode in ["toggle", "hold"]:
+            self.mode = mode
+            return True
+        return False
+
+    def get_mode(self):
+        return self.mode
 
     def start(self):
         if self.running:
@@ -53,6 +64,37 @@ class AutoClicker:
     def is_running(self):
         return self.running
 
+    def start_hold(self):
+        """Start hold mode clicking"""
+        if self.mode != "hold":
+            return False, "Mode bukan hold"
+        
+        if self.hold_active:
+            return False, "Hold mode sudah aktif"
+        
+        self.hold_active = True
+        self.running = True
+        self.click_thread = threading.Thread(target=self._hold_click_loop, daemon=True)
+        self.click_thread.start()
+        return True, "Hold mode dimulai"
+
+    def stop_hold(self):
+        """Stop hold mode clicking"""
+        if self.mode != "hold":
+            return False, "Mode bukan hold"
+        
+        if not self.hold_active:
+            return False, "Hold mode tidak aktif"
+        
+        self.hold_active = False
+        self.running = False
+        if self.click_thread:
+            self.click_thread.join(timeout=1)
+        return True, "Hold mode dihentikan"
+
+    def is_hold_active(self):
+        return self.hold_active and self.mode == "hold"
+
     def _click_loop(self):
         interval_seconds = self.interval_ms / 1000.0
         
@@ -68,4 +110,23 @@ class AutoClicker:
                 print(f"Error saat klik: {e}")
                 break
         
+        self.running = False
+
+    def _hold_click_loop(self):
+        """Click loop for hold mode"""
+        interval_seconds = self.interval_ms / 1000.0
+        
+        while self.hold_active and self.running:
+            try:
+                if self.click_type == "left":
+                    self.mouse_controller.click(Button.left, 1)
+                elif self.click_type == "right":
+                    self.mouse_controller.click(Button.right, 1)
+                
+                time.sleep(interval_seconds)
+            except Exception as e:
+                print(f"Error saat klik hold: {e}")
+                break
+        
+        self.hold_active = False
         self.running = False
