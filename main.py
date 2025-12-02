@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from pynput import keyboard
+from pynput import keyboard, mouse
 import threading
 from auto_clicker import AutoClicker
 
@@ -14,6 +14,7 @@ class AutoClickerUI:
 
         self.auto_clicker = AutoClicker()
         self.listener = None
+        self.mouse_listener = None
         self.update_after_id = None
         self.hotkey_start = keyboard.Key.f6
         self.hotkey_stop = keyboard.Key.f7
@@ -103,6 +104,8 @@ class AutoClickerUI:
         try:
             if hasattr(key, 'name'):
                 return key.name.upper()
+            if isinstance(key, mouse.Button):
+                return str(key).replace("Button.", "").upper()
             return str(key).replace("Key.", "").upper()
         except:
             return str(key).upper()
@@ -113,8 +116,13 @@ class AutoClickerUI:
                 self.listener.stop()
             except:
                 pass
+        if self.mouse_listener:
+            try:
+                self.mouse_listener.stop()
+            except:
+                pass
 
-        def on_press(key):
+        def handle_input_press(key):
             try:
                 if self.auto_clicker.get_mode() == "toggle":
                     if key == self.hotkey_start:
@@ -127,9 +135,9 @@ class AutoClickerUI:
             except AttributeError:
                 pass
             except Exception as e:
-                print(f"Hotkey error: {e}")
+                print(f"Input error: {e}")
 
-        def on_release(key):
+        def handle_input_release(key):
             try:
                 if self.auto_clicker.get_mode() == "hold":
                     if key == self.hotkey_start:
@@ -137,7 +145,19 @@ class AutoClickerUI:
             except AttributeError:
                 pass
             except Exception as e:
-                print(f"Hotkey release error: {e}")
+                print(f"Input release error: {e}")
+
+        def on_press(key):
+            handle_input_press(key)
+
+        def on_release(key):
+            handle_input_release(key)
+
+        def on_click(x, y, button, pressed):
+            if pressed:
+                handle_input_press(button)
+            else:
+                handle_input_release(button)
 
         try:
             self.listener = keyboard.Listener(
@@ -146,6 +166,11 @@ class AutoClickerUI:
                 suppress=False
             )
             self.listener.start()
+            
+            self.mouse_listener = mouse.Listener(
+                on_click=on_click
+            )
+            self.mouse_listener.start()
             
             # Start hotkey monitoring thread
             self.start_hotkey_monitor()
@@ -277,11 +302,24 @@ class AutoClickerUI:
         status_label.pack(pady=10)
 
         captured_key = [None]
+        
+        # Define listeners first so we can refer to them in handle_capture
+        # We use a mutable container for listeners to access them inside closure if needed, 
+        # but since we define them before starting, we can just use local variables if we are careful.
+        # However, handle_capture is called by listeners, so we need to be careful about scope.
+        # Using a class or simple object to hold listeners might be safer, or just rely on closure.
+        
+        listeners = {'keyboard': None, 'mouse': None}
 
-        def on_press(key):
+        def handle_capture(key):
             try:
                 captured_key[0] = key
                 status_label.config(text=f"Tombol: {self.get_key_name(key)}", foreground="green")
+                
+                # Stop listeners
+                if listeners['keyboard']: listeners['keyboard'].stop()
+                if listeners['mouse']: listeners['mouse'].stop()
+                
                 self.root.after(500, lambda: capture_window.destroy())
 
                 if hotkey_type == "start":
@@ -298,12 +336,25 @@ class AutoClickerUI:
             except Exception as e:
                 status_label.config(text=f"Error: {str(e)}", foreground="red")
 
-        listener = keyboard.Listener(on_press=on_press)
-        listener.start()
+        def on_press(key):
+            handle_capture(key)
+            return False
+
+        def on_click(x, y, button, pressed):
+            if pressed:
+                handle_capture(button)
+                return False
+
+        listeners['keyboard'] = keyboard.Listener(on_press=on_press)
+        listeners['keyboard'].start()
+        
+        listeners['mouse'] = mouse.Listener(on_click=on_click)
+        listeners['mouse'].start()
 
         def on_window_close():
             try:
-                listener.stop()
+                if listeners['keyboard']: listeners['keyboard'].stop()
+                if listeners['mouse']: listeners['mouse'].stop()
             except:
                 pass
             capture_window.destroy()
@@ -316,7 +367,8 @@ class AutoClickerUI:
             import time
             while hasattr(self, 'root') and self.root.winfo_exists():
                 try:
-                    if self.listener and not self.listener.running:
+                    if (self.listener and not self.listener.running) or \
+                       (self.mouse_listener and not self.mouse_listener.running):
                         print("Hotkey listener died, restarting...")
                         self.setup_hotkeys()
                         break
